@@ -124,6 +124,11 @@ $ react-native log-android
 iOS: `cmd + ctrl + Z`
 android: `cmd + m`
 
+### Todo
+
+* move time selection to be number + am/pm picker
+* add snooze
+
 ## License
 
 ####

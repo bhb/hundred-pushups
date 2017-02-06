@@ -128,6 +128,13 @@
                                          (dispatch [:db/save]))}
        [text {:style {:color "white" :text-align "center" :font-weight "bold"}} "I did it"]]])])
 
+(defn show-header [title, sub-title]
+  [view {}
+  (when title
+    [text {:style {:font-size 40 :font-weight "100" :margin-bottom 10 :text-align "center"}} title])
+  [text {:style {:font-size 20 :font-weight "100" :margin-bottom 20 :text-align "center"}} sub-title]]
+  )
+
 (defn set-schedule []
   (let [ui-state (subscribe [:ui-state/get])
         white-list (subscribe [:schedule/get-whitelist])]
@@ -136,8 +143,7 @@
        {:style {:flex 1}}
         ;;[text {} @ui-state]
         ;;[text {} white-list]
-
-        [text {:style {:font-size 20 :font-weight "100" :margin-bottom 10 :text-align "center"}} "Create Schedule"]
+        [show-header nil, "Create Schedule"]
 
         (when-not (nil? (:schedule-error @ui-state))
           [text {:style {:color "red" :text-align "center" :font-weight "bold"}} (:schedule-error @ui-state)])
@@ -146,11 +152,17 @@
                               :on-press #(do
                                            (if (not-any? nil? [(:schedule-day-text @ui-state) (:start-text @ui-state) (:end-text @ui-state)])
                                              (do
-                                              (dispatch [:save-white-list (:schedule-day-text @ui-state) (:start-text @ui-state) (:end-text @ui-state)])
-                                              (dispatch [:ui-state/set [:schedule-error] nil])
-                                              (dispatch [:ui-state/set [:start-text] nil])
-                                              (dispatch [:ui-state/set [:end-text] nil])
-                                              (dispatch [:db/save]))
+                                              (if (and (core/valid-hour-time (:start-text @ui-state)) (core/valid-hour-time (:end-text @ui-state)))
+                                                (do
+                                                  (dispatch [:save-white-list (:schedule-day-text @ui-state) (:start-text @ui-state) (:end-text @ui-state)])
+                                                  (dispatch [:ui-state/set [:schedule-error] nil])
+                                                  (dispatch [:ui-state/set [:start-text] nil])
+                                                  (dispatch [:ui-state/set [:end-text] nil])
+                                                  (dispatch [:db/save]))
+                                                (do
+                                                  (dispatch [:ui-state/set [:schedule-error] "time format like 9am or 3pm"])
+                                                  (dispatch [:db/save]))
+                                                ))
                                              (do
                                               (dispatch [:ui-state/set [:schedule-error] "fill in all schedule values"])
                                               (dispatch [:db/save]))
@@ -185,7 +197,7 @@
         ;; TODO input validation
         ;; setup https://github.com/clj-time/clj-time
         ;; use JS plugins https://github.com/xgfe/react-native-datepicker https://www.npmjs.com/package/react-native-date-time-picker
-       
+
        [view {:style {:flex 1 :padding 20}}
         ;; https://facebook.github.io/react-native/docs/scrollview.html
         ;; Keep in mind that ScrollViews must have a bounded height in order to work, since they contain unbounded-height children into a bounded container (via a scroll interaction).
@@ -200,9 +212,9 @@
                                               (dispatch [:db/save]))}
             [text {:style {:color "white" :text-align "center" :font-weight "bold"}} "Remove"]]])]]])))
 
-
 (defn show-stage [stage]
   [view {:style {:flex-direction "column" :align-items "center"}}
+    [show-header "100 Pushup Challenge", "Become a pushup master"]
     [text {:style {:font-size 20 :font-weight "100" :margin-bottom 20 :text-align "center"}} stage]
     (case stage
       :get-started [get-started]

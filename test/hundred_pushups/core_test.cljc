@@ -329,3 +329,16 @@
 (deftest format-whitelist-row-test
   (is (= "Monday: 9AM-5PM", (format-whitelist-row ["Monday" ["9AM" "5PM"]])))
   (is (= "Monday: 9AM-5PM", (format-whitelist-row [:Monday ["9AM" "5PM"]]))))
+
+(deftest valid-hour-time-test
+  (is (= false (valid-hour-time "9not")))
+  (is (= false (valid-hour-time  "9AM")))
+  (is (= false (valid-hour-time  "")))
+  (is (= false (valid-hour-time  nil)))
+  (is (= true  (valid-hour-time  "9am")))
+  (is (= false (valid-hour-time "abc")))
+  (is (= false (valid-hour-time "123")))
+  (is (= false (valid-hour-time "abc") ))
+  (is (= true  (valid-hour-time "5pm")))
+  (is (= true  (valid-hour-time "9am") ))
+  (is (= true  (valid-hour-time "5pm"))))
