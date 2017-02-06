@@ -85,11 +85,17 @@
        (<= (:exr/plank-reps expected-circuit)
            (:exr/plank-reps actual-circuit))))
 
-(defn completed-circuit? [expected-day actual-log]
+(defn finished-circuits? [expected-day actual-log]
+  (let [expected-log (day->log expected-day dummy-ts)]
+    (<= (count expected-log) (count actual-log))))
+
+;; TODO - rename??
+(defn completed-circuit?
+  [expected-day actual-log]
   (let [expected-log (day->log expected-day dummy-ts)]
     (and
      (every? true? (map complete? expected-log actual-log))
-     (<= (count expected-log) (count actual-log)))))
+     (finished-circuits? expected-day actual-log))))
 
 (defn ts-greater? [ts1 ts2]
   ;; <= works for instants in CLJS, but not CLJ
@@ -97,15 +103,17 @@
 
 (declare suggested-day)
 
-(defn analyze-history [history]
+(defn analyze-history [history ts]
   "Given a history, adds key/value pairs
    regarding the state of the history"
   (let [{:keys [:exr/circuits
                 :exr/tests]} history
         last-circuit (last circuits)
         last-test (last tests)
+        ;; TODO - maybe rename these keys? or at least document
         defaults {:fresh-test? false
-                  :last-workout-completed? false}]
+                  :last-workout-completed? false
+                  :done-today? false}]
 
     (cond-> (merge history defaults)
       (and (nil? last-circuit) last-test)
@@ -119,7 +127,17 @@
            (completed-circuit?
             (suggested-day {:exr/tests tests :exr/circuits (but-last-day circuits)})
             circuits))
-      (assoc :last-workout-completed? true))))
+      (assoc :last-workout-completed? true)
+
+      (and last-circuit
+           (dt/later-on-same-day? (:exr/ts last-circuit) ts)
+           (finished-circuits?
+            (suggested-day {:exr/tests tests :exr/circuits (but-last-day circuits)})
+            circuits))
+      (assoc :done-today? true)
+
+      (dt/later-on-same-day? (:exr/ts last-test) ts)
+      (assoc :done-today? true))))
 
 ;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -131,7 +149,7 @@
   (let [{:keys [:exr/circuits
                 :exr/tests
                 :last-workout-completed?
-                :fresh-test?]} (analyze-history history)
+                :fresh-test?]} (analyze-history history dummy-ts)
         last-circuit (last circuits)
         last-test (last tests)]
 

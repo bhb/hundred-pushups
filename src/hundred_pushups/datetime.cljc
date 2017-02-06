@@ -27,7 +27,7 @@
   (time.coerce/to-date (time/now)))
 
 (defn inst
-  "Given seconds from epoch, returns an inst"
+  "Given seconds from epoch (or parseable date), returns an inst."
   [second-since-epoch]
   (time.coerce/to-date second-since-epoch))
 
@@ -76,4 +76,12 @@
      (time/month local-dt)
      (time/day local-dt)]))
 
-
+(s/fdef later-on-same-day?
+        :args (s/cat :ts1 inst? :ts2 inst?))
+(defn later-on-same-day? [ts1 ts2]
+  (and (= (local-date ts1)
+          (local-date ts2))
+       (or (= ts1 ts2)
+           (time/before?
+            (time.coerce/to-date-time ts1)
+            (time.coerce/to-date-time ts2)))))
