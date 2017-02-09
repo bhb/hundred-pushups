@@ -6,8 +6,7 @@
 
 ;;;;;; specs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def :exr/s-pos-int (s/and int? #(<= 0 %))) ; strictly positive int
-(s/def :exr/reps :exr/s-pos-int)
+(s/def :exr/reps nat-int?)
 (s/def :exr/pushup-reps :exr/reps)
 (s/def :exr/plank-reps :exr/reps)
 (s/def :exr/sets (s/int-in 4 20))
