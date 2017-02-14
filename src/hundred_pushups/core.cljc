@@ -1,6 +1,5 @@
 (ns hundred-pushups.core
   (:require
-    [clojure.spec.test :as st]
     [clojure.spec :as s]
     [hundred-pushups.datetime :as dt]))
 
