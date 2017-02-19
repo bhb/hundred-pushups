@@ -20,7 +20,7 @@
   (update history :exr/circuits into (day->log suggested-circuits ts)))
 
 (defn complete-next-day [history ts]
-  (let [next-day (suggested-day history)]
+  (let [next-day (suggested-day history ts)]
     (complete-day history next-day ts)))
 
 #?(:clj
@@ -62,7 +62,7 @@
                :exr/circuits []}
               (dt/inst "2016-01-02T00:00:01"))
              (select-keys [:last-workout-completed? :fresh-test? :done-today?])))))
-  
+
   (testing "after completing first day"
     (is (=
          {:last-workout-completed? true
@@ -155,41 +155,41 @@
             {:exr/tests
              [{:exr/pushup-reps 10
                :exr/plank-reps 15
-               :exr/ts dummy-ts}]
-             :exr/circuits []}))))
+               :exr/ts (dt/inst "2016-01-01T00:00:00")}]
+             :exr/circuits []}
+            (dt/inst "2016-01-02T00:00:00")))))
 
   (testing "suggests 4 x 50% + 1 after one day"
-    (let [ts #inst "2016-01-01"]
-      (is (= {:exr/suggested-circuit
-              {:exr/pushup-reps 6 :exr/plank-reps 9}
-              :exr/sets 4}
-             (-> {:exr/tests
-                  [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts dummy-ts}]
-                  :exr/circuits
-                  []}
-                 (complete-next-day ts)
-                 (suggested-day))))))
+    (is (= {:exr/suggested-circuit
+            {:exr/pushup-reps 6 :exr/plank-reps 9}
+            :exr/sets 4}
+           (-> {:exr/tests
+                [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts (dt/inst "2016-01-01T00:00:00")}]
+                :exr/circuits
+                []}
+               (complete-next-day (dt/inst "2016-01-02T00:00:00"))
+               (suggested-day (dt/inst "2016-01-03T00:00:01"))))))
 
-  (testing "suggests 4 x 50% + 2 after two day"
-    (let [ts #inst "2016-01-01"]
-      (is (= {:exr/suggested-circuit
-              {:exr/pushup-reps 7 :exr/plank-reps 10}
-              :exr/sets 4}
-             (-> {:exr/tests
-                  [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts dummy-ts}]
-                  :exr/circuits
-                  []}
-                 (complete-next-day ts)
-                 (complete-next-day ts)
-                 (suggested-day))))))
+  (testing "suggests 4 x 50% + 2 after two days"
+    (is (= {:exr/suggested-circuit
+            {:exr/pushup-reps 7 :exr/plank-reps 10}
+            :exr/sets 4}
+           (-> {:exr/tests
+                [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts (dt/inst "2016-01-01T00:00:01Z")}]
+                :exr/circuits
+                []}
+               (complete-next-day (dt/inst "2016-01-02T00:00:01Z"))
+               (complete-next-day (dt/inst "2016-01-03T00:00:01Z"))
+               (suggested-day (dt/inst "2016-01-04T00:00:01Z"))))))
 
   (testing "suggests a test if previous workout was less than suggested"
     (is (= :exr/do-test
            (suggested-day
             {:exr/tests
-             [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts (dt/inst 0)}]
+             [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts (dt/inst "2016-01-01T00:00:01Z")}]
              :exr/circuits
-             [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst 1)}]}))))
+             [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01Z")}]}
+            (dt/inst "2016-01-03T00:00:01Z")))))
 
   (testing "suggests reps if previous workout was less than suggested previously, but
             a more recent test has been completed"
@@ -198,10 +198,11 @@
             :exr/sets 4}
            (suggested-day
             {:exr/tests
-             [{:exr/pushup-reps 10 :exr/plank-reps 12 :exr/ts (dt/inst 0)}
-              {:exr/pushup-reps 10 :exr/plank-reps 12 :exr/ts (dt/inst 2)}]
+             [{:exr/pushup-reps 10 :exr/plank-reps 12 :exr/ts (dt/inst "2016-01-01T00:00:01Z")}
+              {:exr/pushup-reps 10 :exr/plank-reps 12 :exr/ts (dt/inst "2016-01-03T00:00:01Z")}]
              :exr/circuits
-             [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst 1)}]}))))
+             [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01Z")}]}
+            (dt/inst "2016-01-04T00:00:01Z")))))
 
   ;; FIXME - I'm getting weird warnings around this on node tests. Maybe problems importing the macro?
   #?(:clj
@@ -210,9 +211,9 @@
         "suggested circuit always has reps equal to or greater than last circuit reps (or requires a test)"
         10
         [args (s/gen args-sp)]
-        (let [[history] args
+        (let [[history ts] args
               {:keys [:exr/circuits :exr/tests]} history
-              day (suggested-day history)]
+              day (suggested-day history ts)]
           (when-not (= :exr/do-test day)
             (let [new-circ (:exr/circuit day)
                   last-circuit (last circuits)]
