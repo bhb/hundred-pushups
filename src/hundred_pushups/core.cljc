@@ -3,9 +3,9 @@
     [clojure.spec :as s]
     [hundred-pushups.datetime :as dt]))
 
-
-;; http://dev.clojure.org/jira/browse/CLJ-1993
-#?(:clj
+;; For some reason figwheel doesn't like this?
+;; See http://dev.clojure.org/jira/browse/CLJ-1993
+#_#?(:clj
    (set! *print-namespace-maps* false))
 
 ;;;;;; specs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -101,15 +101,10 @@
      (every? true? (map complete? expected-log (take-last (count expected-log) actual-log)))
      (finished-circuits? expected-day actual-log))))
 
-;; TODO - move this to datetime namespace
-(defn ts-greater? [ts1 ts2]
-  ;; <= works for instants in CLJS, but not CLJ
-  (neg? (compare ts1 ts2)))
-
 (declare suggested-day)
 
 (defn history-at [history ts]
-  (let [remove-newer #(vec (remove (comp (partial ts-greater? ts) :exr/ts) %))]
+  (let [remove-newer #(vec (remove (comp (partial dt/greater? ts) :exr/ts) %))]
     (-> history
         (update :exr/tests remove-newer)
         (update :exr/circuits remove-newer))))
@@ -136,7 +131,7 @@
       (assoc :fresh-test? true
              :last-workout-completed? false)
 
-      (ts-greater? (:exr/ts last-circuit (dt/inst 0)) (:exr/ts last-test))
+      (dt/greater? (:exr/ts last-circuit (dt/inst 0)) (:exr/ts last-test))
       (assoc :fresh-test? true)
 
       (and last-circuit

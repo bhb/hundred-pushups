@@ -107,3 +107,7 @@
         #?(:clj  (time/with-time-at-start-of-day)
            :cljs (time/at-midnight))
         (time.coerce/to-date)))
+
+(defn greater? [ts1 ts2]
+  ;; <= works for instants in CLJS, but not CLJ
+  (neg? (compare ts1 ts2)))
