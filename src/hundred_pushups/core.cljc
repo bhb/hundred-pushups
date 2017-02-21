@@ -89,12 +89,15 @@
        (<= (:exr/plank-reps expected-circuit)
            (:exr/plank-reps actual-circuit))))
 
-(defn finished-circuits? [expected-day actual-log]
+(defn finished-circuits?
+  "True if user is done with circuits, even if they did not complete the
+  full number of reps each circuit."
+  [expected-day actual-log]
   (let [expected-log (day->log expected-day dummy-ts)]
     (<= (count expected-log) (count actual-log))))
 
-;; TODO - rename??
-(defn completed-circuit?
+(defn completed-last-circuit?
+  "True if user did correct number of reps for all sets"
   [expected-day actual-log]
   (let [expected-log (day->log expected-day dummy-ts)]
     (and
@@ -136,7 +139,7 @@
 
       (and last-circuit
            last-suggested-day
-           (completed-circuit? last-suggested-day circuits))
+           (completed-last-circuit? last-suggested-day circuits))
       (assoc :last-workout-completed? true)
 
       (and last-circuit

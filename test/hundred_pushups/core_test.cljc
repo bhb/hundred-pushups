@@ -3,7 +3,7 @@
             [clojure.spec :as s]
             [clojure.test.check.generators :as gen]
             [hundred-pushups.test-helper :refer [instrument-all check-asserts] :include-macros true]
-            [hundred-pushups.core :refer [day->log suggested-day analyze-history dummy-ts last-days-log completed-circuit? parse-int merge-day-changes format-whitelist-row valid-hour-time]]
+            [hundred-pushups.core :refer [day->log suggested-day analyze-history dummy-ts last-days-log completed-last-circuit? parse-int merge-day-changes format-whitelist-row valid-hour-time]]
             [hundred-pushups.datetime :as dt]
             [com.gfredericks.test.chuck.clojure-test :as ct :refer [checking]])
   #?(:cljs
@@ -258,41 +258,41 @@
 (deftest completed-circuit?-test
   (testing "returns false if completed too few sets"
     (is (= false
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}
                                 :exr/sets 4}
-                               []))))
+                                    []))))
   (testing "returns false if there are too few reps in any set"
     (is (= false
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}
                                 :exr/sets 4}
-                               [{:exr/pushup-reps 4 :exr/plank-reps 5}
+                                    [{:exr/pushup-reps 4 :exr/plank-reps 5}
                                 {:exr/pushup-reps 4 :exr/plank-reps 5}
                                 {:exr/pushup-reps 4 :exr/plank-reps 5}
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}])))
     (is (= false
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}
                                 :exr/sets 4}
-                               [{:exr/pushup-reps 5 :exr/plank-reps 5}
+                                    [{:exr/pushup-reps 5 :exr/plank-reps 5}
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}
                                 {:exr/pushup-reps 5 :exr/plank-reps 5}
                                 {:exr/pushup-reps 5 :exr/plank-reps 3}]))))
   (testing "returns true if completed all reps in all sets"
     (is (= true
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 :exr/sets 4}
-                               [{:exr/pushup-reps 1 :exr/plank-reps 1}
+                                    [{:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}])))
     (is (= true
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 :exr/sets 4}
-                               [{:exr/pushup-reps 1 :exr/plank-reps 1}
+                                    [{:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
@@ -300,10 +300,10 @@
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}]))))
   (testing "returns true if completed extra reps"
     (is (= true
-           (completed-circuit? {:exr/suggested-circuit
+           (completed-last-circuit? {:exr/suggested-circuit
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 :exr/sets 4}
-                               [{:exr/pushup-reps 1 :exr/plank-reps 1}
+                                    [{:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 1}
                                 {:exr/pushup-reps 1 :exr/plank-reps 2}])))))
