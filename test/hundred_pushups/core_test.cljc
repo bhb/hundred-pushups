@@ -204,6 +204,18 @@
              [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01Z")}]}
             (dt/inst "2016-01-04T00:00:01Z")))))
 
+  (testing "suggests waiting if sets are finished"
+    (is (= :exr/wait
+           (-> (suggested-day
+                {:exr/tests
+                 [{:exr/pushup-reps 10 :exr/plank-reps 15 :exr/ts (dt/inst "2016-01-01T00:00:00")}]
+                 :exr/circuits
+                 [{:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01")}
+                  {:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01")}
+                  {:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01")}
+                  {:exr/pushup-reps 0 :exr/plank-reps 0 :exr/ts (dt/inst "2016-01-02T00:00:01")}]}
+                (dt/inst "2016-01-02T00:00:02"))))))
+
   ;; FIXME - I'm getting weird warnings around this on node tests. Maybe problems importing the macro?
   #?(:clj
      (let [{args-sp :args ret-sp :ret} (s/get-spec #'suggested-day)]
