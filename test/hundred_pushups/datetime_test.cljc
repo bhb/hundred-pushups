@@ -39,6 +39,6 @@
        (is (= [2016 01 02]
               (local-date #inst "2016-01-02T12:01:01Z" "America/Denver")))
        (is (= [1969 12 31]
-              (local-date (inst 0))))
+              (local-date (inst 0) "America/Denver")))
        (is (= [2015 12 31]
               (local-date (inst "2016-01-01T00:00:00Z") "America/Denver"))))))
