@@ -10,9 +10,8 @@
 
 ;;;;;; specs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def :exr/reps nat-int?)
-(s/def :exr/pushup-reps :exr/reps)
-(s/def :exr/plank-reps :exr/reps)
+(s/def :exr/pushup-reps nat-int?)
+(s/def :exr/plank-reps nat-int?)
 (s/def :exr/sets (s/int-in 4 20))
 (s/def :exr/ts inst?)
 
