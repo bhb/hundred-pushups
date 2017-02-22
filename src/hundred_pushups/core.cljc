@@ -175,12 +175,12 @@
       {:exr/sets 4
        :exr/suggested-circuit (map-vals half (dissoc last-test :exr/ts))}
 
+      done-today?
+      :exr/wait
+
       last-workout-completed?
       {:exr/sets 4
        :exr/suggested-circuit (map-vals inc (dissoc last-circuit :exr/ts))}
-
-      done-today?
-      :exr/wait
 
       :else
       :exr/do-test))))

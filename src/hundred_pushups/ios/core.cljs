@@ -164,6 +164,10 @@
        [text {:style {:color "white" :text-align "center" :font-weight "bold"}} "Done!"]]]
      )])
 
+(defn show-wait []
+  [view {}
+   [text {} "Nice job! You're done for the day!"]])
+
 (defn show-stage [stage]
   [view {:style {:flex-direction "column" :align-items "center"}}
    [text {:style {:font-size 20 :font-weight "100" :margin-bottom 20 :text-align "center"}} stage]
@@ -173,15 +177,16 @@
      :do-pushup-test [do-pushup-test]
      :do-plank-test [do-plank-test]
      :show-day (let [day @(subscribe [:days-exercise])]
-                 (if (= day :exr/do-test)
-                   [do-pushup-test]
+                 (case day
+                   :exr/do-test [do-pushup-test]
+                   :exr/wait [show-wait]
                    [show-day day]))
      [invalid-stage])])
 
 (defn dev-menu []
   [view {:style {:flex 1 :padding-bottom 20}}
    [text {:style (-> styles :section)} "DB"]
-   [scroll-view {:style {}}
+   [scroll-view {:style {:height 250}}
     [text {:style {:font-family "Menlo"
                    :background-color "lightgrey"}}
      (pp/write @(subscribe [:db]) :stream nil)]]

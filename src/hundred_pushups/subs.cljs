@@ -37,7 +37,9 @@
       (:circuits db)
       :exr/tests
       (:tests db)}
-     (:actual-time db))))
+     (or
+      (:simulated-time db)
+      (:actual-time db)))))
 
 (reg-sub
  :selected-tab
