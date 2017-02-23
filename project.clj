@@ -16,7 +16,7 @@
                  ;; moment, and we need to convert to/from it
                  [cljsjs/moment "2.17.1-0"]]
   :plugins [[lein-cljsbuild "1.1.4"]
-            [lein-figwheel "0.5.9"]]
+            [lein-figwheel "0.5.8"]]
   :clean-targets ["target/" "index.ios.js" "index.android.js"]
   :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
             ["do" "clean"
@@ -25,7 +25,7 @@
                                        [venantius/ultra "0.5.0"]]
                              :dependencies [[proto-repl-charts "0.3.2"]
                                             [proto-repl "0.3.1"]]}
-             :dev {:dependencies [[figwheel-sidecar "0.5.9"]
+             :dev {:dependencies [[figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/test.check "0.9.0"]
                                   [com.gfredericks/test.chuck "0.2.7"]]
