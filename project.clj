@@ -16,7 +16,7 @@
                  ;; moment, and we need to convert to/from it
                  [cljsjs/moment "2.17.1-0"]]
   :plugins [[lein-cljsbuild "1.1.4"]
-            [lein-figwheel "0.5.8"]]
+            [lein-figwheel "0.5.9"]]
   :clean-targets ["target/" "index.ios.js" "index.android.js"]
   :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
             ["do" "clean"
