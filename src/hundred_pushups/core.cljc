@@ -3,12 +3,15 @@
     [clojure.spec :as s]
     [hundred-pushups.datetime :as dt]))
 
+;; For some reason figwheel doesn't like this?
+;; See http://dev.clojure.org/jira/browse/CLJ-1993
+#_#?(:clj
+   (set! *print-namespace-maps* false))
+
 ;;;;;; specs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def :exr/s-pos-int (s/and int? #(<= 0 %))) ; strictly positive int
-(s/def :exr/reps :exr/s-pos-int)
-(s/def :exr/pushup-reps :exr/reps)
-(s/def :exr/plank-reps :exr/reps)
+(s/def :exr/pushup-reps nat-int?)
+(s/def :exr/plank-reps nat-int?)
 (s/def :exr/sets (s/int-in 4 20))
 (s/def :exr/ts inst?)
 
@@ -24,14 +27,12 @@
 (s/def :exr/action
   (s/or
    :do-circuits :exr/suggested-circuits
-   :do-test #{:exr/do-test}))
+   :do-action #{:exr/do-test :exr/wait}))
 
 (s/def :exr/circuits (s/coll-of :exr/circuit))
 (s/def :exr/tests (s/coll-of :exr/test))
-(s/def :exr/history (s/and (s/keys :req [:exr/circuits
-                                         :exr/tests])
-                           #(pos?
-                              (count (:exr/tests %)))))
+(s/def :exr/history (s/keys :req [:exr/circuits
+                                  :exr/tests]))
 
 ;;;;;; private ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -65,18 +66,21 @@
         :args (s/cat :day :exr/action
                      :ts :exr/ts))
 (defn day->log [day ts]
-  (if (= day :exr/do-test)
+  (if (#{:exr/do-test :exr/wait} day)
     []
     (repeat (:exr/sets day)
             (assoc (:exr/suggested-circuit day)
                    :exr/ts ts))))
 
-(defn but-last-day [circuits]
-  (->> circuits
-       (partition-by (comp dt/local-date :exr/ts) )
-       butlast
-       flatten
-       vec))
+(defn but-last-day [circuits ts]
+  (remove
+   (fn [circuit]
+     (= (dt/local-date (:exr/ts circuit))
+        (dt/local-date ts)))
+   circuits))
+
+(defn before-last-set [circuits]
+  (dt/past (:exr/ts (first (last-days-log circuits))) 1))
 
 (defn complete? [expected-circuit actual-circuit]
   (and (<= (:exr/pushup-reps expected-circuit)
@@ -84,53 +88,85 @@
        (<= (:exr/plank-reps expected-circuit)
            (:exr/plank-reps actual-circuit))))
 
-(defn completed-circuit? [expected-day actual-log]
+(defn finished-circuits?
+  "True if user is done with circuits, even if they did not complete the
+  full number of reps each circuit."
+  [expected-day actual-log]
+  (let [expected-log (day->log expected-day dummy-ts)]
+    (<= (count expected-log) (count actual-log))))
+
+(defn completed-last-circuit?
+  "True if user did correct number of reps for all sets"
+  [expected-day actual-log]
   (let [expected-log (day->log expected-day dummy-ts)]
     (and
-     (every? true? (map complete? expected-log actual-log))
-     (<= (count expected-log) (count actual-log)))))
-
-(defn ts-greater? [ts1 ts2]
-  ;; <= works for instants in CLJS, but not CLJ
-  (neg? (compare ts1 ts2)))
+     (every? true? (map complete? expected-log (take-last (count expected-log) actual-log)))
+     (finished-circuits? expected-day actual-log))))
 
 (declare suggested-day)
 
-(defn analyze-history [history]
+(defn history-at [history ts]
+  (let [remove-newer #(vec (remove (comp (partial dt/greater? ts) :exr/ts) %))]
+    (-> history
+        (update :exr/tests remove-newer)
+        (update :exr/circuits remove-newer))))
+
+(defn analyze-history [history ts]
   "Given a history, adds key/value pairs
    regarding the state of the history"
   (let [{:keys [:exr/circuits
                 :exr/tests]} history
         last-circuit (last circuits)
         last-test (last tests)
-        defaults {:fresh-test? false
-                  :last-workout-completed? false}]
 
-    (cond-> (merge history defaults)
+        old-circuits (but-last-day circuits ts)
+        last-suggested-day (if (seq circuits)
+                             (let [old-ts (before-last-set circuits)]
+                               (suggested-day (history-at history old-ts) old-ts))
+                             ::no-day)]
+    (cond-> (assoc history
+                   :fresh-test? false
+                   :last-workout-completed? false
+                   :done-today? false
+                   :last-suggested-day last-suggested-day)
       (and (nil? last-circuit) last-test)
       (assoc :fresh-test? true
              :last-workout-completed? false)
 
-      (ts-greater? (:exr/ts last-circuit (dt/inst 0)) (:exr/ts last-test))
+      (dt/greater? (:exr/ts last-circuit (dt/inst 0)) (:exr/ts last-test))
       (assoc :fresh-test? true)
 
       (and last-circuit
-           (completed-circuit?
-            (suggested-day {:exr/tests tests :exr/circuits (but-last-day circuits)})
-            circuits))
-      (assoc :last-workout-completed? true))))
+           last-suggested-day
+           (completed-last-circuit? last-suggested-day circuits))
+      (assoc :last-workout-completed? true)
+
+      (and last-circuit
+           (dt/later-on-same-day? (:exr/ts last-circuit) ts)
+           last-suggested-day
+           (finished-circuits? last-suggested-day circuits))
+      (assoc :done-today? true)
+
+      (dt/later-on-same-day? (:exr/ts last-test) ts)
+      (assoc :done-today? true))))
 
 ;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef suggested-day
         :args (s/cat
-               :history :exr/history)
+               :history :exr/history
+               :ts :exr/ts)
         :ret :exr/action)
-(defn suggested-day [history]
-  (let [{:keys [:exr/circuits
+(defn suggested-day [history ts]
+  ;; Base case is that there are no tests, so we do a new test
+  (if (empty? (:exr/tests history))
+    :exr/do-test
+    ;; otherwise, do recursive analysis
+    (let [{:keys [:exr/circuits
                 :exr/tests
                 :last-workout-completed?
-                :fresh-test?]} (analyze-history history)
+                :done-today?
+                :fresh-test?]} (analyze-history history ts)
         last-circuit (last circuits)
         last-test (last tests)]
 
@@ -139,12 +175,15 @@
       {:exr/sets 4
        :exr/suggested-circuit (map-vals half (dissoc last-test :exr/ts))}
 
+      done-today?
+      :exr/wait
+
       last-workout-completed?
       {:exr/sets 4
        :exr/suggested-circuit (map-vals inc (dissoc last-circuit :exr/ts))}
 
       :else
-      :exr/do-test)))
+      :exr/do-test))))
 
 (defn ui-state->path [ui-state]
   (concat

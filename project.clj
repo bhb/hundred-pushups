@@ -25,7 +25,7 @@
                                        [venantius/ultra "0.5.0"]]
                              :dependencies [[proto-repl-charts "0.3.2"]
                                             [proto-repl "0.3.1"]]}
-             :dev {:dependencies [[figwheel-sidecar "0.5.9"]
+             :dev {:dependencies [[figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/test.check "0.9.0"]
                                   [com.gfredericks/test.chuck "0.2.7"]]

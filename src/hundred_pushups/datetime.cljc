@@ -21,13 +21,21 @@
                        [cljs-time.format :as time.format]
                        [cljsjs.moment :as moment]])))
 
+(defn past
+  "Given an inst and a number of seconds n, returns a inst
+   n seconds in the past"
+  [inst n]
+  (-> (time.coerce/from-date inst)
+      (time/minus (time/seconds n))
+      (time.coerce/to-date)))
+
 (defn now
   "The current datetime"
   []
   (time.coerce/to-date (time/now)))
 
 (defn inst
-  "Given seconds from epoch, returns an inst"
+  "Given seconds from epoch (or parseable date), returns an inst."
   [second-since-epoch]
   (time.coerce/to-date second-since-epoch))
 
@@ -61,7 +69,7 @@
          (time.coerce/to-date (time.format/parse (ct-formatter) time-str))))))
 
 (defn inst->str
-  "Given an inst, returns a string representation 
+  "Given an inst, returns a string representation
   using the default formatter."
   [inst]
   (time.format/unparse (ct-formatter) (time.coerce/from-date inst)))
@@ -81,4 +89,25 @@
       (time/month local-dt)
       (time/day local-dt)])))
 
+(s/fdef later-on-same-day?
+        :args (s/cat :ts1 inst? :ts2 inst?))
+(defn later-on-same-day? [ts1 ts2]
+  (and (= (local-date ts1)
+          (local-date ts2))
+       (or (= ts1 ts2)
+           (time/before?
+            (time.coerce/to-date-time ts1)
+            (time.coerce/to-date-time ts2)))))
 
+ (s/fdef start-of-day
+         :args (s/cat :ts inst?))
+(defn start-of-day [ts]
+    (-> ts
+        (time.coerce/from-date)
+        #?(:clj  (time/with-time-at-start-of-day)
+           :cljs (time/at-midnight))
+        (time.coerce/to-date)))
+
+(defn greater? [ts1 ts2]
+  ;; <= works for instants in CLJS, but not CLJ
+  (neg? (compare ts1 ts2)))
